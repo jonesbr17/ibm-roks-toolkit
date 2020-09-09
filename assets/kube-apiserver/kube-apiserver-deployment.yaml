@@ -14,10 +14,12 @@ spec:
   selector:
     matchLabels:
       app: kube-apiserver
+      clusterID: {{ .ClusterID }}
   template:
     metadata:
       labels:
         app: kube-apiserver
+        clusterID: {{ .ClusterID }}
 {{ if .RestartDate }}
       annotations:
         openshift.io/restartedAt: "{{ .RestartDate }}"
@@ -29,6 +31,16 @@ spec:
           value: "true"
           effect: NoSchedule
       affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: clusterID
+                      operator: In
+                      values: ["{{ .ClusterID }}"]
+                topologyKey: "kubernetes.io/hostname"
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
@@ -148,7 +160,7 @@ spec:
         - name: KP_DATA_JSON
           value: '{{ .KPInfo }}'
         - name: KP_WDEK_PATH
-          value: "/tmp/kp/wdek"  
+          value: "/tmp/kp/wdek"
         - name: API_KEY
           value: {{ .KPAPIKey }}
         - name: HEALTHZ_PATH
